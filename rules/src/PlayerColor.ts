@@ -1,5 +1,5 @@
 enum PlayerColor {
-  Blue = 1, Red, Green, Yellow
+  Blue = 1, Yellow = 2
 }
 
 export default PlayerColor

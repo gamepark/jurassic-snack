@@ -40,12 +40,8 @@ export const JurassicSnackOptionsDescription: OptionsDescription<{}, JurassicSna
 
 export function getPlayerName(playerId: PlayerColor, t: TFunction) {
   switch (playerId) {
-    case PlayerColor.Red:
-      return t('Red player')
     case PlayerColor.Blue:
       return t('Blue player')
-    case PlayerColor.Green:
-      return t('Green player')
     case PlayerColor.Yellow:
       return t('Yellow player')
   }
