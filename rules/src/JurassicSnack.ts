@@ -5,7 +5,7 @@ import GameView from './GameView'
 import {getGrassView, setupGrass} from './Grass'
 import {isGameOptions, JurassicSnackOptions} from './JurassicSnackOptions'
 import {changeActivePlayerMove} from './moves/ChangeActivePlayer'
-import {eatGrass, eatGrassMove} from './moves/EatGrass'
+import {eatGrass, eatGrassMove, getIndexOfGrassToEat} from './moves/EatGrass'
 import Move from './moves/Move'
 import MoveDiplo, {moveDiplo, moveDiploMove} from './moves/MoveDiplo'
 import MoveTRex from './moves/MoveTRex'
@@ -116,13 +116,9 @@ export default class JurassicSnack extends SequentialGame<GameState, Move, Playe
    * @return The next automatic consequence that should be played in current game state.
    */
   getAutomaticMove(): void | Move {
-    const activePlayer = this.state.players.find(p => p.color === this.state.activePlayer)
-    if (activePlayer) {
-      for (const {x, y} of activePlayer.diplos) {
-        if (this.state.board.grass.some(grass => grass.x === x && grass.y === y)) {
-          return eatGrassMove
-        }
-      }
+    const indexOfGrassToEat = getIndexOfGrassToEat(this.state)
+    if (indexOfGrassToEat !== -1) {
+      return eatGrassMove
     }
     if (!this.state.remainingActions) {
       return changeActivePlayerMove

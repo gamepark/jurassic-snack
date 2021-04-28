@@ -11,7 +11,7 @@ type GameState = {
   players: PlayerState[]
   activePlayer?: PlayerColor
   remainingActions: number,
-  pendingEffect?: GrassEffect
+  pendingEffect?: Exclude<GrassEffect, GrassEffect.Yummy>
   emptyTurn: number
 }
 
