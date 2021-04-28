@@ -1,13 +1,12 @@
 import GameView from '@gamepark/jurassic-snack/GameView'
-import {drawCardInPlayerView, drawCardInView, isDrawCardView} from '@gamepark/jurassic-snack/moves/DrawCard'
+import {eatGrassInView} from '@gamepark/jurassic-snack/moves/EatGrass'
+import {moveDiplo} from '@gamepark/jurassic-snack/moves/MoveDiplo'
 import MoveType from '@gamepark/jurassic-snack/moves/MoveType'
 import MoveView from '@gamepark/jurassic-snack/moves/MoveView'
-import {spendGold} from '@gamepark/jurassic-snack/moves/SpendGold'
 import {Game} from '@gamepark/rules-api'
 
 /**
- * This class is useful when the game has "IncompleteInformation" (or "SecretInformation").
- * It allows to handle, in a different way than the backend side, the moves that involve hidden information.
+ * Rules of Jurassic Snack that will run in players and spectators browsers
  */
 export default class JurassicSnackView implements Game<GameView, MoveView> {
   state: GameView
@@ -21,7 +20,7 @@ export default class JurassicSnackView implements Game<GameView, MoveView> {
    * The reason why it should be anticipated instead of waiting for the backend to provide with all the automatic consequences is latency.
    * If the backend takes time to reply, maybe we will have the reply while we are animating the first consequences. The player won't notice the latency!
    *
-   * @return A MoveView which can be completely anticipated by the player or the spectator
+   * @return MoveView which can be completely anticipated by the player or the spectator
    */
   getAutomaticMove(): void | MoveView {
     return
@@ -35,14 +34,11 @@ export default class JurassicSnackView implements Game<GameView, MoveView> {
    */
   play(move: MoveView): void {
     switch (move.type) {
-      case MoveType.SpendGold:
-        return spendGold(this.state, move)
-      case MoveType.DrawCard:
-        if (isDrawCardView(move)) {
-          return drawCardInPlayerView(this.state, move)
-        } else {
-          return drawCardInView(this.state, move)
-        }
+      case MoveType.MoveDiplo:
+        return moveDiplo(this.state, move)
+      case MoveType.EatGrass:
+        return eatGrassInView(this.state, move)
+      // TODO all other cases
     }
   }
 

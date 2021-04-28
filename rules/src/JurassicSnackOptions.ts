@@ -20,7 +20,7 @@ export type JurassicSnackOptions = GameOptions<{}, JurassicSnackPlayerOptions>
  * @return true if arg is a Game options
  */
 export function isGameOptions(arg: GameState | JurassicSnackOptions): arg is JurassicSnackOptions {
-  return typeof (arg as GameState).deck === 'undefined'
+  return typeof (arg as GameState).board === 'undefined'
 }
 
 /**

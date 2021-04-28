@@ -1,20 +1,19 @@
 import {SecretInformation, SequentialGame} from '@gamepark/rules-api'
 import GameState from './GameState'
 import GameView from './GameView'
+import {getGrassView} from './Grass'
 import {isGameOptions, JurassicSnackOptions} from './JurassicSnackOptions'
-import {drawCard} from './moves/DrawCard'
+import {changeActivePlayerMove} from './moves/ChangeActivePlayer'
+import {eatGrass, eatGrassMove} from './moves/EatGrass'
 import Move from './moves/Move'
+import MoveDiplo, {moveDiplo, moveDiploMove} from './moves/MoveDiplo'
+import MoveTRex from './moves/MoveTRex'
 import MoveType from './moves/MoveType'
 import MoveView from './moves/MoveView'
-import {spendGold} from './moves/SpendGold'
 import PlayerColor from './PlayerColor'
 
 /**
- * Your Board Game rules must extend either "SequentialGame" or "SimultaneousGame".
- * When there is at least on situation during the game where multiple players can act at the same time, it is a "SimultaneousGame"
- * If the game contains information that players does not know (dices, hidden cards...), it must implement "IncompleteInformation".
- * If the game contains information that some players know, but the other players does not, it must implement "SecretInformation" instead.
- * Later on, you can also implement "Competitive", "Undo", "TimeLimit" and "Eliminations" to add further features to the game.
+ * Rules of Jurassic Snack that will run on Game Park's servers
  */
 export default class JurassicSnack extends SequentialGame<GameState, Move, PlayerColor>
   implements SecretInformation<GameState, GameView, Move, MoveView, PlayerColor> {
@@ -34,7 +33,11 @@ export default class JurassicSnack extends SequentialGame<GameState, Move, Playe
    */
   constructor(arg: GameState | JurassicSnackOptions) {
     if (isGameOptions(arg)) {
-      super({players: arg.players.map(player => ({color: player.id})), round: 1, deck: []})
+      super({
+        board: {pastures: [], grass: [], tRex: []},
+        players: [{color: PlayerColor.Blue, diplos: [], grass: []}, {color: PlayerColor.Yellow, diplos: [], grass: []}],
+        activePlayer: PlayerColor.Blue, remainingActions: 1, emptyTurn: 0
+      })
     } else {
       super(arg)
     }
@@ -44,7 +47,7 @@ export default class JurassicSnack extends SequentialGame<GameState, Move, Playe
    * @return True when game is over
    */
   isOver(): boolean {
-    return false
+    return this.state.activePlayer === undefined
   }
 
   /**
@@ -53,7 +56,7 @@ export default class JurassicSnack extends SequentialGame<GameState, Move, Playe
    * @return The identifier of the player whose turn it is
    */
   getActivePlayer(): PlayerColor | undefined {
-    return undefined // You must return undefined only when game is over, otherwise the game will be blocked.
+    return this.state.activePlayer
   }
 
   /**
@@ -67,10 +70,22 @@ export default class JurassicSnack extends SequentialGame<GameState, Move, Playe
    * - A class that implements "Dummy" to provide a custom Dummy player.
    */
   getLegalMoves(): Move[] {
-    return [
-      {type: MoveType.SpendGold, playerId: this.getActivePlayer()!, quantity: 5},
-      {type: MoveType.DrawCard, playerId: this.getActivePlayer()!}
-    ]
+    const player = this.state.players.find(player => player.color === this.state.activePlayer)
+    if (!player) return []
+    if (this.state.pendingEffect) {
+      return [] // TODO: Birth, Recon, Air Travel, Air Raid, Volcanic Eruption
+    } else {
+      const moves: (MoveDiplo | MoveTRex)[] = []
+      player.diplos.forEach((coordinates, diplo) => {
+        // TODO: rules for legal diplo moves
+        moves.push(moveDiploMove(diplo, {x: coordinates.x + 1, y: coordinates.y + 1}))
+        moves.push(moveDiploMove(diplo, {x: coordinates.x + 1, y: coordinates.y - 1}))
+        moves.push(moveDiploMove(diplo, {x: coordinates.x - 1, y: coordinates.y + 1}))
+        moves.push(moveDiploMove(diplo, {x: coordinates.x - 1, y: coordinates.y - 1}))
+      })
+      // TODO: add TRex moves
+      return moves
+    }
   }
 
   /**
@@ -80,10 +95,11 @@ export default class JurassicSnack extends SequentialGame<GameState, Move, Playe
    */
   play(move: Move): void {
     switch (move.type) {
-      case MoveType.SpendGold:
-        return spendGold(this.state, move)
-      case MoveType.DrawCard:
-        return drawCard(this.state, move)
+      case MoveType.MoveDiplo:
+        return moveDiplo(this.state, move)
+      case MoveType.EatGrass:
+        return eatGrass(this.state)
+      // TODO all other cases
     }
   }
 
@@ -101,15 +117,17 @@ export default class JurassicSnack extends SequentialGame<GameState, Move, Playe
    * @return The next automatic consequence that should be played in current game state.
    */
   getAutomaticMove(): void | Move {
-    /**
-     * Example:
-     * for (const player of this.state.players) {
-     *   if (player.mustDraw) {
-     *     return {type: MoveType.DrawCard, playerId: player.color}
-     *   }
-     * }
-     */
-    return
+    const activePlayer = this.state.players.find(p => p.color === this.state.activePlayer)
+    if (activePlayer) {
+      for (const {x, y} of activePlayer.diplos) {
+        if (this.state.board.grass.some(grass => grass.x === x && grass.y === y)) {
+          return eatGrassMove
+        }
+      }
+    }
+    if (!this.state.remainingActions) {
+      return changeActivePlayerMove
+    }
   }
 
   /**
@@ -117,18 +135,18 @@ export default class JurassicSnack extends SequentialGame<GameState, Move, Playe
    * @return What a person can see from the game state
    */
   getView(): GameView {
-    return {...this.state, deck: this.state.deck.length}
+    return {
+      ...this.state,
+      board: {...this.state.board, grass: this.state.board.grass.map(getGrassView)}
+    }
   }
 
   /**
    * If you game has "SecretInformation", you must also implement "getPlayerView", returning the information visible by a specific player.
-   * @param playerId Identifier of the player
    * @return what the player can see
    */
-  getPlayerView(playerId: PlayerColor): GameView {
-    console.log(playerId)
-    // Here we could, for example, return a "playerView" with only the number of cards in hand for the other player only.
-    return {...this.state, deck: this.state.deck.length}
+  getPlayerView(): GameView {
+    return this.getView() // Secret information is only carried by the moves in this case
   }
 
   /**
@@ -140,7 +158,13 @@ export default class JurassicSnack extends SequentialGame<GameState, Move, Playe
    * @return What a person should know about the move that was played
    */
   getMoveView(move: Move): MoveView {
-    return move
+    switch (move.type) {
+      case MoveType.EatGrass:
+        const activePlayer = this.state.players.find(p => p.color === this.state.activePlayer)!
+        return {...move, effect: activePlayer.grass[activePlayer.grass.length - 1]}
+      default:
+        return move
+    }
   }
 
   /**
@@ -153,10 +177,10 @@ export default class JurassicSnack extends SequentialGame<GameState, Move, Playe
    * @return What a person should know about the move that was played
    */
   getPlayerMoveView(move: Move, playerId: PlayerColor): MoveView {
-    console.log(playerId)
-    if (move.type === MoveType.DrawCard && move.playerId === playerId) {
-      return {...move, card: this.state.deck[0]}
+    if (this.state.activePlayer === playerId && move.type === MoveType.LookAtGrass) {
+      return {...move, effect: this.state.board.grass.find(grass => grass.x === move.x && grass.y === move.y)!.effect}
+    } else {
+      return this.getMoveView(move)
     }
-    return move
   }
 }
