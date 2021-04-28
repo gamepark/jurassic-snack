@@ -1,7 +1,7 @@
 import {SecretInformation, SequentialGame} from '@gamepark/rules-api'
 import GameState from './GameState'
 import GameView from './GameView'
-import {getGrassView} from './Grass'
+import {getGrassView, setupGrass} from './Grass'
 import {isGameOptions, JurassicSnackOptions} from './JurassicSnackOptions'
 import {changeActivePlayerMove} from './moves/ChangeActivePlayer'
 import {eatGrass, eatGrassMove} from './moves/EatGrass'
@@ -10,7 +10,8 @@ import MoveDiplo, {moveDiplo, moveDiploMove} from './moves/MoveDiplo'
 import MoveTRex from './moves/MoveTRex'
 import MoveType from './moves/MoveType'
 import MoveView from './moves/MoveView'
-import PlayerColor from './PlayerColor'
+import {setupDiplos, setupPastures} from './Pasture'
+import PlayerColor, {playerColors} from './PlayerColor'
 
 /**
  * Rules of Jurassic Snack that will run on Game Park's servers
@@ -33,9 +34,10 @@ export default class JurassicSnack extends SequentialGame<GameState, Move, Playe
    */
   constructor(arg: GameState | JurassicSnackOptions) {
     if (isGameOptions(arg)) {
+      const pastures = setupPastures()
       super({
-        board: {pastures: [], grass: [], tRex: []},
-        players: [{color: PlayerColor.Blue, diplos: [], grass: []}, {color: PlayerColor.Yellow, diplos: [], grass: []}],
+        board: {pastures, grass: setupGrass(pastures), tRex: []},
+        players: playerColors.map(color => ({color, diplos: setupDiplos(pastures, color), grass: []})),
         activePlayer: PlayerColor.Blue, remainingActions: 1, emptyTurn: 0
       })
     } else {
