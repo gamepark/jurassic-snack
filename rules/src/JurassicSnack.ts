@@ -1,4 +1,5 @@
 import {SecretInformation, SequentialGame} from '@gamepark/rules-api'
+import {getDiploAvailableDestinations} from './Diplodocus'
 import GameState from './GameState'
 import GameView from './GameView'
 import {getGrassView, setupGrass} from './Grass'
@@ -78,12 +79,8 @@ export default class JurassicSnack extends SequentialGame<GameState, Move, Playe
       return [] // TODO: Birth, Recon, Air Travel, Air Raid, Volcanic Eruption
     } else {
       const moves: (MoveDiplo | MoveTRex)[] = []
-      player.diplos.forEach((coordinates, diplo) => {
-        // TODO: rules for legal diplo moves
-        moves.push(moveDiploMove(diplo, {x: coordinates.x + 1, y: coordinates.y + 1}))
-        moves.push(moveDiploMove(diplo, {x: coordinates.x + 1, y: coordinates.y - 1}))
-        moves.push(moveDiploMove(diplo, {x: coordinates.x - 1, y: coordinates.y + 1}))
-        moves.push(moveDiploMove(diplo, {x: coordinates.x - 1, y: coordinates.y - 1}))
+      player.diplos.forEach((position, diplo) => {
+        getDiploAvailableDestinations(this.state, position).forEach(destination => moves.push(moveDiploMove(diplo, destination)))
       })
       // TODO: add TRex moves
       return moves

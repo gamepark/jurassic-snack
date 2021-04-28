@@ -1,6 +1,7 @@
 import Coordinates from '../Coordinates'
 import GameState from '../GameState'
 import GameView from '../GameView'
+import GrassEffect from '../GrassEffect'
 import MoveType from './MoveType'
 
 type MoveDiplo = {
@@ -15,6 +16,11 @@ export function moveDiploMove(diplo: number, coordinates: Coordinates): MoveDipl
 }
 
 export function moveDiplo(state: GameState | GameView, move: MoveDiplo) {
-  console.log(state)
-  console.log(move)
+  const player = state.players.find(p => p.color === state.activePlayer)!
+  player.diplos[move.diplo] = {x: move.x, y: move.y}
+  if (state.pendingEffect === GrassEffect.AirTravel) {
+    delete state.pendingEffect
+  } else {
+    state.remainingActions--
+  }
 }

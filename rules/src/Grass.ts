@@ -1,4 +1,5 @@
 import shuffle from 'lodash.shuffle'
+import Board from './Board'
 import Coordinates from './Coordinates'
 import GrassEffect, {grassEffects} from './GrassEffect'
 import Pasture, {PASTURE_SIZE, pastureRotate, pasturesDescriptions} from './Pasture'
@@ -38,4 +39,8 @@ export function setupGrass(pastures: Pasture[]): Grass[] {
     }
   }
   return grass
+}
+
+export function hasGrass(board: Board, {x, y}: Coordinates) {
+  return board.grass.some(grass => grass.x === x && grass.y === y)
 }

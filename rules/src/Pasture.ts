@@ -59,3 +59,11 @@ export function setupDiplos(pastures: Pasture[], color: PlayerColor): Coordinate
     return {x: pasture.x * PASTURE_SIZE + position.x, y: pasture.y * PASTURE_SIZE + position.y}
   })
 }
+
+export function outsidePlayingArea(pastures: Pasture[], coordinates: Coordinates) {
+  return pastures.every(pasture => coordinates.x < pasture.x * PASTURE_SIZE
+    || coordinates.x >= pasture.x * PASTURE_SIZE + PASTURE_SIZE
+    || coordinates.y < pasture.y * PASTURE_SIZE
+    || coordinates.y >= pasture.y * PASTURE_SIZE + PASTURE_SIZE
+  )
+}
